@@ -47,6 +47,7 @@ export default function Analytics() {
     to: new Date(),
   });
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedCounselors, setSelectedCounselors] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
   const filters: DashboardFilters = useMemo(
@@ -54,10 +55,27 @@ export default function Analytics() {
       dateFrom: dateRange.from,
       dateTo: dateRange.to,
       sources: selectedSources.length > 0 ? selectedSources : undefined,
+      counselors: selectedCounselors.length > 0 ? selectedCounselors : undefined,
       search: search || undefined,
     }),
-    [dateRange, selectedSources, search]
+    [dateRange, selectedSources, selectedCounselors, search]
   );
+
+  const { data: sources = [] } = useQuery({
+    queryKey: ["sources"],
+    queryFn: async () => {
+      const { fetchSources } = await import("@/lib/supabaseQueries");
+      return fetchSources();
+    },
+  });
+
+  const { data: counselors = [] } = useQuery({
+    queryKey: ["counselors"],
+    queryFn: async () => {
+      const { fetchCounselors } = await import("@/lib/supabaseQueries");
+      return fetchCounselors();
+    },
+  });
 
   const { data: dailyTrend, isLoading: loadingTrend } = useQuery({
     queryKey: ["dailyLeadsTrend", filters],
@@ -136,13 +154,16 @@ export default function Analytics() {
         <FiltersComponent
           dateRange={dateRange}
           onDateRangeChange={(range) => {
-            if (range.from && range.to) {
+            if (range?.from && range?.to) {
               setDateRange({ from: range.from, to: range.to });
             }
           }}
-          sources={[]}
+          sources={sources}
           selectedSources={selectedSources}
           onSourcesChange={setSelectedSources}
+          counselors={counselors}
+          selectedCounselors={selectedCounselors}
+          onCounselorsChange={setSelectedCounselors}
           search={search}
           onSearchChange={setSearch}
         />

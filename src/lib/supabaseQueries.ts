@@ -5,6 +5,7 @@ export interface DashboardFilters {
   dateFrom: Date;
   dateTo: Date;
   sources?: string[];
+  counselors?: string[];
   search?: string;
 }
 
@@ -146,23 +147,43 @@ export async function fetchFollowups(filters: DashboardFilters) {
 export async function fetchSources() {
   const { data, error } = await supabase
     .from("leads")
-    .select("source, source_platform")
-    .not("source", "is", null);
+    .select("source, source_platform");
 
   if (error) throw error;
-  const sources = [...new Set(data?.map((d) => d.source_platform || d.source) || [])];
+  const sources = [...new Set(data?.map((d) => d.source_platform || d.source || "Unknown") || [])];
   return sources.filter(Boolean) as string[];
+}
+
+// Get all counselors
+export async function fetchCounselors() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map((c) => ({ id: c.id, name: c.name }));
 }
 
 // Analytics queries
 export async function fetchDailyLeadsTrend(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let query = supabase
     .from("leads")
     .select("created_at")
     .gte("created_at", filters.dateFrom.toISOString())
     .lte("created_at", filters.dateTo.toISOString())
     .order("created_at", { ascending: true });
 
+  if (filters.sources?.length) {
+    query = query.in("source_platform", filters.sources);
+  }
+
+  if (filters.counselors?.length) {
+    query = query.in("counselor_uuid", filters.counselors);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   // Group by day
@@ -176,12 +197,17 @@ export async function fetchDailyLeadsTrend(filters: DashboardFilters) {
 }
 
 export async function fetchLeadsBySource(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let query = supabase
     .from("leads")
     .select("source, source_platform")
     .gte("created_at", filters.dateFrom.toISOString())
     .lte("created_at", filters.dateTo.toISOString());
 
+  if (filters.counselors?.length) {
+    query = query.in("counselor_uuid", filters.counselors);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, lead: any) => {
@@ -196,7 +222,7 @@ export async function fetchLeadsBySource(filters: DashboardFilters) {
 }
 
 export async function fetchLeadsByInstagram(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let query = supabase
     .from("leads")
     .select("instagram_post_id")
     .not("instagram_post_id", "is", null)
@@ -204,6 +230,15 @@ export async function fetchLeadsByInstagram(filters: DashboardFilters) {
     .gte("created_at", filters.dateFrom.toISOString())
     .lte("created_at", filters.dateTo.toISOString());
 
+  if (filters.sources?.length) {
+    query = query.in("source_platform", filters.sources);
+  }
+
+  if (filters.counselors?.length) {
+    query = query.in("counselor_uuid", filters.counselors);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, lead: any) => {
@@ -250,7 +285,24 @@ export async function fetchDuplicateLeads() {
 }
 
 export async function fetchCallingConversions(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  // First get lead_ids that match counselor filter if provided
+  let leadIds: number[] | undefined;
+  if (filters.counselors?.length || filters.sources?.length) {
+    let leadQuery = supabase.from("leads").select("id");
+    
+    if (filters.counselors?.length) {
+      leadQuery = leadQuery.in("counselor_uuid", filters.counselors);
+    }
+    
+    if (filters.sources?.length) {
+      leadQuery = leadQuery.in("source_platform", filters.sources);
+    }
+    
+    const { data: leadsData } = await leadQuery;
+    leadIds = leadsData?.map((l: any) => l.id);
+  }
+
+  let query = supabase
     .from("stage_history")
     .select("lead_id, created_at, from_stage, to_stage")
     .ilike("from_stage", "%Calling%")
@@ -259,6 +311,11 @@ export async function fetchCallingConversions(filters: DashboardFilters) {
     .lte("created_at", filters.dateTo.toISOString())
     .order("created_at", { ascending: true });
 
+  if (leadIds) {
+    query = query.in("lead_id", leadIds);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, record: any) => {
@@ -275,14 +332,35 @@ export async function fetchCallingConversions(filters: DashboardFilters) {
 }
 
 export async function fetchShortlistingCompleted(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let leadIds: number[] | undefined;
+  if (filters.counselors?.length || filters.sources?.length) {
+    let leadQuery = supabase.from("leads").select("id");
+    
+    if (filters.counselors?.length) {
+      leadQuery = leadQuery.in("counselor_uuid", filters.counselors);
+    }
+    
+    if (filters.sources?.length) {
+      leadQuery = leadQuery.in("source_platform", filters.sources);
+    }
+    
+    const { data: leadsData } = await leadQuery;
+    leadIds = leadsData?.map((l: any) => l.id);
+  }
+
+  let query = supabase
     .from("tasks")
-    .select("created_at")
+    .select("created_at, lead_id")
     .ilike("shortlisting_status", "Completed")
     .gte("created_at", filters.dateFrom.toISOString())
     .lte("created_at", filters.dateTo.toISOString())
     .order("created_at", { ascending: true });
 
+  if (leadIds) {
+    query = query.in("lead_id", leadIds);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, task: any) => {
@@ -298,7 +376,23 @@ export async function fetchShortlistingCompleted(filters: DashboardFilters) {
 }
 
 export async function fetchApplicationsSubmitted(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let leadIds: number[] | undefined;
+  if (filters.counselors?.length || filters.sources?.length) {
+    let leadQuery = supabase.from("leads").select("id");
+    
+    if (filters.counselors?.length) {
+      leadQuery = leadQuery.in("counselor_uuid", filters.counselors);
+    }
+    
+    if (filters.sources?.length) {
+      leadQuery = leadQuery.in("source_platform", filters.sources);
+    }
+    
+    const { data: leadsData } = await leadQuery;
+    leadIds = leadsData?.map((l: any) => l.id);
+  }
+
+  let query = supabase
     .from("university_applications")
     .select("created_at, lead_id, university_name, status")
     .not("status", "is", null)
@@ -306,6 +400,11 @@ export async function fetchApplicationsSubmitted(filters: DashboardFilters) {
     .lte("created_at", filters.dateTo.toISOString())
     .order("created_at", { ascending: false });
 
+  if (leadIds) {
+    query = query.in("lead_id", leadIds);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, app: any) => {
@@ -323,14 +422,35 @@ export async function fetchApplicationsSubmitted(filters: DashboardFilters) {
 }
 
 export async function fetchFollowupCalls(filters: DashboardFilters) {
-  const { data, error } = await supabase
+  let leadIds: number[] | undefined;
+  if (filters.counselors?.length || filters.sources?.length) {
+    let leadQuery = supabase.from("leads").select("id");
+    
+    if (filters.counselors?.length) {
+      leadQuery = leadQuery.in("counselor_uuid", filters.counselors);
+    }
+    
+    if (filters.sources?.length) {
+      leadQuery = leadQuery.in("source_platform", filters.sources);
+    }
+    
+    const { data: leadsData } = await leadQuery;
+    leadIds = leadsData?.map((l: any) => l.id);
+  }
+
+  let query = supabase
     .from("tasks")
-    .select("created_at")
+    .select("created_at, lead_id")
     .or(`task_type.ilike.%follow%,call_type.ilike.%follow%`)
     .gte("created_at", filters.dateFrom.toISOString())
     .lte("created_at", filters.dateTo.toISOString())
     .order("created_at", { ascending: true });
 
+  if (leadIds) {
+    query = query.in("lead_id", leadIds);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const grouped = (data || []).reduce((acc: any, task: any) => {
@@ -346,29 +466,75 @@ export async function fetchFollowupCalls(filters: DashboardFilters) {
 }
 
 export async function fetchFunnelData(filters: DashboardFilters) {
+  // Get filtered lead IDs if counselor or source filters are applied
+  let leadIds: number[] | undefined;
+  if (filters.counselors?.length || filters.sources?.length) {
+    let leadQuery = supabase.from("leads").select("id");
+    
+    if (filters.counselors?.length) {
+      leadQuery = leadQuery.in("counselor_uuid", filters.counselors);
+    }
+    
+    if (filters.sources?.length) {
+      leadQuery = leadQuery.in("source_platform", filters.sources);
+    }
+    
+    const { data: leadsData } = await leadQuery;
+    leadIds = leadsData?.map((l: any) => l.id);
+  }
+
+  // Build queries with filters
+  let leadsQuery = supabase
+    .from("leads")
+    .select("created_at, id")
+    .gte("created_at", filters.dateFrom.toISOString())
+    .lte("created_at", filters.dateTo.toISOString());
+
+  if (filters.counselors?.length) {
+    leadsQuery = leadsQuery.in("counselor_uuid", filters.counselors);
+  }
+
+  if (filters.sources?.length) {
+    leadsQuery = leadsQuery.in("source_platform", filters.sources);
+  }
+
+  let calledQuery = supabase
+    .from("tasks")
+    .select("lead_id, created_at")
+    .or(`task_type.ilike.%call%,call_type.is.not.null`)
+    .gte("created_at", filters.dateFrom.toISOString())
+    .lte("created_at", filters.dateTo.toISOString());
+
+  if (leadIds) {
+    calledQuery = calledQuery.in("lead_id", leadIds);
+  }
+
+  let counsellingQuery = supabase
+    .from("stage_history")
+    .select("lead_id, created_at")
+    .ilike("to_stage", "%Counselling%")
+    .gte("created_at", filters.dateFrom.toISOString())
+    .lte("created_at", filters.dateTo.toISOString());
+
+  if (leadIds) {
+    counsellingQuery = counsellingQuery.in("lead_id", leadIds);
+  }
+
+  let appsQuery = supabase
+    .from("university_applications")
+    .select("created_at, lead_id")
+    .gte("created_at", filters.dateFrom.toISOString())
+    .lte("created_at", filters.dateTo.toISOString());
+
+  if (leadIds) {
+    appsQuery = appsQuery.in("lead_id", leadIds);
+  }
+
   const [leadsData, calledData, counsellingData, appsData] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("created_at")
-      .gte("created_at", filters.dateFrom.toISOString())
-      .lte("created_at", filters.dateTo.toISOString()),
-    supabase
-      .from("tasks")
-      .select("lead_id, created_at")
-      .or(`task_type.ilike.%call%,call_type.is.not.null`)
-      .gte("created_at", filters.dateFrom.toISOString())
-      .lte("created_at", filters.dateTo.toISOString()),
-    supabase
-      .from("stage_history")
-      .select("lead_id, created_at")
-      .ilike("to_stage", "%Counselling%")
-      .gte("created_at", filters.dateFrom.toISOString())
-      .lte("created_at", filters.dateTo.toISOString()),
-    supabase
-      .from("university_applications")
-      .select("created_at")
-      .gte("created_at", filters.dateFrom.toISOString())
-      .lte("created_at", filters.dateTo.toISOString()),
+    leadsQuery,
+    calledQuery,
+    counsellingQuery,
+    appsQuery,
   ]);
 
   const groupByDay = (data: any[], countUnique = false) => {

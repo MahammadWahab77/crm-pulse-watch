@@ -41,6 +41,7 @@ export default function Dashboard() {
     to: new Date(),
   });
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedCounselors, setSelectedCounselors] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
   const filters: FilterType = useMemo(
@@ -48,15 +49,26 @@ export default function Dashboard() {
       dateFrom: dateRange?.from || subDays(new Date(), 90),
       dateTo: dateRange?.to || new Date(),
       sources: selectedSources.length > 0 ? selectedSources : undefined,
+      counselors: selectedCounselors.length > 0 ? selectedCounselors : undefined,
       search: search || undefined,
     }),
-    [dateRange, selectedSources, search]
+    [dateRange, selectedSources, selectedCounselors, search]
   );
 
   // Fetch all sources for filter
   const { data: sources = [] } = useQuery({
     queryKey: ["sources"],
     queryFn: fetchSources,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch all counselors for filter
+  const { data: counselors = [] } = useQuery({
+    queryKey: ["counselors"],
+    queryFn: async () => {
+      const { fetchCounselors } = await import("@/lib/supabaseQueries");
+      return fetchCounselors();
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -275,6 +287,9 @@ export default function Dashboard() {
           sources={sources}
           selectedSources={selectedSources}
           onSourcesChange={setSelectedSources}
+          counselors={counselors}
+          selectedCounselors={selectedCounselors}
+          onCounselorsChange={setSelectedCounselors}
           search={search}
           onSearchChange={setSearch}
         />
