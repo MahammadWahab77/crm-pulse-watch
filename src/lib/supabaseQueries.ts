@@ -155,11 +155,11 @@ export async function fetchFollowups(filters: DashboardFilters) {
 export async function fetchSources() {
   const { data, error } = await supabase
     .from("leads")
-    .select("source, source_platform")
+    .select("source")
     .not("source", "is", null);
 
   if (error) throw error;
-  const sources = [...new Set(data?.map((d) => d.source_platform || d.source) || [])];
+  const sources = [...new Set(data?.map((d) => d.source) || [])];
   return sources.filter(Boolean) as string[];
 }
 
