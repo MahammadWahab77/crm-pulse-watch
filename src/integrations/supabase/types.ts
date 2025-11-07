@@ -53,7 +53,21 @@ export type Database = {
             foreignKeyName: "documents_lead_id_leads_id_fk"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_normalized"
             referencedColumns: ["id"]
           },
           {
@@ -230,7 +244,21 @@ export type Database = {
             foreignKeyName: "remarks_lead_id_leads_id_fk"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remarks_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remarks_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_normalized"
             referencedColumns: ["id"]
           },
           {
@@ -285,7 +313,21 @@ export type Database = {
             foreignKeyName: "stage_history_lead_id_leads_id_fk"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_history_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_history_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_normalized"
             referencedColumns: ["id"]
           },
           {
@@ -394,7 +436,21 @@ export type Database = {
             foreignKeyName: "tasks_lead_id_leads_id_fk"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_normalized"
             referencedColumns: ["id"]
           },
           {
@@ -449,7 +505,21 @@ export type Database = {
             foreignKeyName: "university_applications_lead_id_leads_id_fk"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "university_applications_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "university_applications_lead_id_leads_id_fk"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_normalized"
             referencedColumns: ["id"]
           },
         ]
@@ -519,7 +589,106 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      apps_submitted_daily: {
+        Row: {
+          applications: number | null
+          day: string | null
+        }
+        Relationships: []
+      }
+      counselling_conversions_daily: {
+        Row: {
+          conversions: number | null
+          day: string | null
+        }
+        Relationships: []
+      }
+      duplicate_leads: {
+        Row: {
+          created_at: string | null
+          email_dupe_count: number | null
+          email_norm: string | null
+          id: number | null
+          name: string | null
+          phone_dupe_count: number | null
+          phone_norm: string | null
+          source: string | null
+        }
+        Relationships: []
+      }
+      followups_daily: {
+        Row: {
+          day: string | null
+          followups: number | null
+        }
+        Relationships: []
+      }
+      leads_daily: {
+        Row: {
+          day: string | null
+          leads: number | null
+          source: string | null
+        }
+        Relationships: []
+      }
+      leads_instagram_daily: {
+        Row: {
+          day: string | null
+          ig_source: string | null
+          leads: number | null
+        }
+        Relationships: []
+      }
+      leads_monthly: {
+        Row: {
+          leads: number | null
+          month: string | null
+          source: string | null
+        }
+        Relationships: []
+      }
+      leads_normalized: {
+        Row: {
+          created_at: string | null
+          email_norm: string | null
+          id: number | null
+          name: string | null
+          phone_norm: string | null
+          source: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_norm?: never
+          id?: number | null
+          name?: string | null
+          phone_norm?: never
+          source?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_norm?: never
+          id?: number | null
+          name?: string | null
+          phone_norm?: never
+          source?: string | null
+        }
+        Relationships: []
+      }
+      leads_weekly: {
+        Row: {
+          leads: number | null
+          source: string | null
+          week: string | null
+        }
+        Relationships: []
+      }
+      shortlisting_daily: {
+        Row: {
+          day: string | null
+          shortlisted: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
