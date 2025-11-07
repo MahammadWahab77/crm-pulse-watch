@@ -243,7 +243,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">CRM Analytics</h1>
+              <h1 className="text-2xl font-bold">CRM Dashboard</h1>
               <p className="text-sm text-muted-foreground">{session?.email}</p>
             </div>
             <div className="flex items-center gap-4">
@@ -254,6 +254,9 @@ export default function Dashboard() {
                 <Activity className="h-3 w-3" />
                 {isRealtimeConnected ? "Live" : "Disconnected"}
               </Badge>
+              <Button variant="outline" onClick={() => navigate("/analytics")}>
+                Analytics
+              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out

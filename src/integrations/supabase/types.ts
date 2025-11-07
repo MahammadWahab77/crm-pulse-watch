@@ -97,6 +97,7 @@ export type Database = {
           current_stage: string
           email: string | null
           id: number
+          instagram_post_id: string | null
           intake: string | null
           manager_id: number | null
           manager_uuid: string | null
@@ -106,6 +107,7 @@ export type Database = {
           prev_consultancy: string | null
           remarks: string | null
           source: string | null
+          source_platform: string | null
           uid: string | null
           updated_at: string
         }
@@ -119,6 +121,7 @@ export type Database = {
           current_stage?: string
           email?: string | null
           id?: number
+          instagram_post_id?: string | null
           intake?: string | null
           manager_id?: number | null
           manager_uuid?: string | null
@@ -128,6 +131,7 @@ export type Database = {
           prev_consultancy?: string | null
           remarks?: string | null
           source?: string | null
+          source_platform?: string | null
           uid?: string | null
           updated_at?: string
         }
@@ -141,6 +145,7 @@ export type Database = {
           current_stage?: string
           email?: string | null
           id?: number
+          instagram_post_id?: string | null
           intake?: string | null
           manager_id?: number | null
           manager_uuid?: string | null
@@ -150,6 +155,7 @@ export type Database = {
           prev_consultancy?: string | null
           remarks?: string | null
           source?: string | null
+          source_platform?: string | null
           uid?: string | null
           updated_at?: string
         }
