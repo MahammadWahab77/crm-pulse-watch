@@ -3,7 +3,7 @@
 
 const CREDENTIALS = {
   email: "gundluru.mahammadwahab@nxtwave.co.in",
-  password: "NxtWave%5405@",
+  password: "NxtWave@5405",
 };
 
 export interface AuthSession {
